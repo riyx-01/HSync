@@ -369,7 +369,7 @@ def report():
                                doctor_type=data.get('doctor_type', 'General Physician'))
     except errors.ClientError as e:
         if e.code == 429:
-             return "Service is temporarily busy (Quota Exceeded). Please try again later.", 429
+             return f"Service is temporarily busy (Quota Exceeded). Details: {e}", 429
         return f"Client Error generating report: {e}", 400
     except Exception as e:
         return f"Error generating report: {e}", 500

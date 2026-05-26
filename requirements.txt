@@ -1,0 +1,7 @@
+Flask
+google-genai
+Markdown
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+python-dotenv
