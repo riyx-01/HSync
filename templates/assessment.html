@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Assessment{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .assessment-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    .body-map-container {
+        position: relative;
+        width: 300px;
+        height: 500px;
+        margin: 0 auto;
+    }
+    .body-part {
+        fill: #e0e0e0;
+        stroke: #333;
+        stroke-width: 1;
+        cursor: pointer;
+        transition: fill 0.3s;
+    }
+    .body-part:hover {
+        fill: #b0b0b0;
+    }
+    .body-part.selected {
+        fill: #ff6b6b;
+    }
+    .form-group {
+        width: 100%;
+        max-width: 600px;
+    }
+    .symptom-shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .shortcut-chip {
+        background: rgba(255,255,255,0.5);
+        border: 1px solid var(--border);
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+    }
+    .shortcut-chip:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+    .shortcut-chip i {
+        font-style: normal;
+        font-size: 1.1em;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-container">
+    <div class="glass-card">
+        <h1>Symptom Assessment</h1>
+        <p>Click on the body map to select affected areas or describe your symptoms below.</p>
+        
+        <div class="body-map-container">
+          <!-- Simple SVG Body Map -->
+          <svg viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+            <!-- Head -->
+            <circle id="head" class="body-part" cx="100" cy="40" r="25" data-part="Head" />
+            <!-- Neck -->
+            <rect id="neck" class="body-part" x="90" y="65" width="20" height="15" data-part="Neck" />
+            <!-- Torso -->
+            <rect id="chest" class="body-part" x="70" y="80" width="60" height="60" rx="10" data-part="Chest" />
+            <rect id="stomach" class="body-part" x="70" y="140" width="60" height="50" rx="5" data-part="Stomach/Abdomen" />
+            <!-- Arms -->
+            <rect id="left-arm" class="body-part" x="40" y="80" width="25" height="100" rx="5" transform="rotate(10 40 80)" data-part="Left Arm" />
+            <rect id="right-arm" class="body-part" x="135" y="80" width="25" height="100" rx="5" transform="rotate(-10 135 80)" data-part="Right Arm" />
+            <!-- Legs -->
+            <rect id="left-leg" class="body-part" x="70" y="190" width="28" height="120" rx="5" data-part="Left Leg" />
+            <rect id="right-leg" class="body-part" x="102" y="190" width="28" height="120" rx="5" data-part="Right Leg" />
+          </svg>
+        </div>
+
+        <form action="/report" method="POST" class="form-group" id="assessment-form">
+            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <label for="height" style="display: block; margin-bottom: 8px;">Height (optional)</label>
+                    <input type="text" id="height" name="height" class="form-control" placeholder="e.g. 170 cm or 5'9">
+                </div>
+                <div style="flex: 1;">
+                    <label for="weight" style="display: block; margin-bottom: 8px;">Weight (optional)</label>
+                    <input type="text" id="weight" name="weight" class="form-control" placeholder="e.g. 70 kg or 150 lbs">
+                </div>
+            </div>
+
+            <label for="symptoms">Describe your symptoms:</label>
+            <div class="symptom-shortcuts" id="shortcuts-container">
+                <!-- Dynamic chips will appear here -->
+            </div>
+            <textarea id="symptoms" name="symptoms" class="form-control" rows="4" placeholder="Select body parts or type to see suggestions..."></textarea>
+            <input type="hidden" id="selected-parts" name="selected_parts">
+            <br><br>
+            <button type="submit" class="btn" style="width: 100%;">Generate Health Report</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const symptomData = {
+        'General': [
+            {name: 'Fever', icon: '🌡️'}, {name: 'Fatigue', icon: '💤'}, {name: 'Chills', icon: '🥶'}, 
+            {name: 'Sweating', icon: '😅'}, {name: 'Nausea', icon: '🤢'}, {name: 'Dizziness', icon: '💫'},
+            {name: 'Weakness', icon: '🔋'}, {name: 'Dehydration', icon: '🥤'}, {name: 'Insomnia', icon: '😴'}
+        ],
+        'Head': [
+            {name: 'Headache', icon: '🤕'}, {name: 'Migraine', icon: '⚡'}, {name: 'Blurred Vision', icon: '👁️'}, 
+            {name: 'Sinus Pressure', icon: '👃'}, {name: 'Confusion', icon: '😵'}, {name: 'Dizziness', icon: '💫'},
+            {name: 'Runny Nose', icon: '🤧'}
+        ],
+        'Neck': [
+            {name: 'Neck Pain', icon: '🧣'}, {name: 'Stiffness', icon: '🪵'}, {name: 'Sore Throat', icon: '💊'},
+            {name: 'Swollen Nodes', icon: '🌰'}, {name: 'Difficulty Swallowing', icon: '🥤'}
+        ],
+        'Chest': [
+            {name: 'Chest Pain', icon: '💔'}, {name: 'Shortness of Breath', icon: '🫁'}, {name: 'Cough', icon: '😮‍💨'}, 
+            {name: 'Wheezing', icon: '💨'}, {name: 'Palpitations', icon: '💓'}, {name: 'Heartburn', icon: '🔥'}
+        ],
+        'Stomach/Abdomen': [
+            {name: 'Stomach Ache', icon: '😣'}, {name: 'Vomiting', icon: '🤮'}, {name: 'Bloating', icon: '🎈'}, 
+            {name: 'Acid Reflux', icon: '🔥'}, {name: 'Diarrhea', icon: '💩'}, {name: 'Constipation', icon: '🧱'},
+            {name: 'Abdominal Cramps', icon: '⚡'}, {name: 'Indigestion', icon: '🍔'}
+        ],
+        'Arms': [
+            {name: 'Arm Pain', icon: '💪'}, {name: 'Shoulder Pain', icon: '🏋️'}, {name: 'Numbness', icon: '⚡'},
+            {name: 'Weakness', icon: '🔋'}, {name: 'Tingling', icon: '✨'}, {name: 'Joint Pain', icon: '🦴'}
+        ],
+        'Legs': [
+            {name: 'Leg Pain', icon: '🦵'}, {name: 'Knee Pain', icon: '🦴'}, {name: 'Swelling', icon: '🎈'}, 
+            {name: 'Cramps', icon: '⚡'}, {name: 'Ankle Pain', icon: '🦶'}, {name: 'Foot Pain', icon: '👟'}
+        ],
+        'Skin': [
+            {name: 'Rash', icon: '🍄'}, {name: 'Itching', icon: '🤏'}, {name: 'Bruising', icon: '🫐'},
+            {name: 'Redness', icon: '🔴'}, {name: 'Dry Skin', icon: '🌵'}
+        ]
+    };
+
+    // Flatten all symptoms for predictive search
+    const allSymptoms = [];
+    Object.values(symptomData).forEach(category => {
+        category.forEach(s => allSymptoms.push(s));
+    });
+
+    // Mapping specific parts to general categories
+    const partMapping = {
+        'Left Arm': 'Arms', 'Right Arm': 'Arms',
+        'Left Leg': 'Legs', 'Right Leg': 'Legs',
+        'Head': 'Head', 'Neck': 'Neck', 'Chest': 'Chest', 'Stomach/Abdomen': 'Stomach/Abdomen'
+    };
+
+    let selectedParts = [];
+
+    function addSymptom(symptomName) {
+        const textarea = document.getElementById('symptoms');
+        let currentText = textarea.value;
+        const words = currentText.split(/([,.\s]+)/); // Split by separators but keep them
+        const lastWord = words[words.length - 1];
+
+        // If the user was typing a partial word (predictive match), replace it
+        if (lastWord && lastWord.length > 0 && symptomName.toLowerCase().startsWith(lastWord.toLowerCase())) {
+             words[words.length - 1] = symptomName;
+             textarea.value = words.join('');
+        } else {
+            // Normal addition
+            if (currentText) {
+                // Check if ends with separator
+                if (currentText.trim().endsWith(',')) {
+                     textarea.value += " " + symptomName;
+                } else if (currentText.trim().length > 0) {
+                     textarea.value += ", " + symptomName;
+                } else {
+                     textarea.value = symptomName;
+                }
+            } else {
+                textarea.value = symptomName;
+            }
+        }
+        
+        textarea.focus();
+        // Trigger input event to refresh suggestions
+        renderShortcuts();
+    }
+
+    function renderShortcuts() {
+        const container = document.getElementById('shortcuts-container');
+        const textarea = document.getElementById('symptoms');
+        const fullText = textarea.value.toLowerCase();
+        
+        // Extract the last word being typed for predictive text
+        const words = textarea.value.split(/[,.\s]+/); // Split by delimiters
+        const lastWord = words[words.length - 1].toLowerCase();
+        
+        let suggestions = new Set(); 
+        let predictiveMatches = [];
+
+        // 1. Predictive Search (High Priority)
+        // Only trigger if last word has length > 0
+        if (lastWord.length > 0) {
+            allSymptoms.forEach(s => {
+                if (s.name.toLowerCase().startsWith(lastWord) && s.name.toLowerCase() !== lastWord) {
+                    predictiveMatches.push(s);
+                }
+            });
+        }
+
+        // If we have predictive matches, show them FIRST
+        if (predictiveMatches.length > 0) {
+            predictiveMatches.forEach(s => suggestions.add(JSON.stringify(s)));
+        } else {
+            // 2. Fallback: Context-aware suggestions (Body Parts & Keywords)
+            
+            // Add based on Selected Body Parts
+            selectedParts.forEach(part => {
+                let key = part;
+                if (partMapping[part]) key = partMapping[part];
+                
+                if (symptomData[key]) {
+                    symptomData[key].forEach(s => suggestions.add(JSON.stringify(s)));
+                }
+            });
+
+            // Add General symptoms if nothing else is selected/typed
+            if (suggestions.size === 0) {
+                symptomData['General'].forEach(s => suggestions.add(JSON.stringify(s)));
+            }
+        }
+
+        // Render
+        container.innerHTML = '';
+        
+        // Convert back to objects and filter out already typed ones
+        Array.from(suggestions).map(s => JSON.parse(s)).forEach(item => {
+            // If the symptom is NOT already in the textarea (exact match check)
+            // We check fullText for the item name to avoid re-suggesting "Headache" if "Headache" is already there
+            if (!fullText.includes(item.name.toLowerCase())) {
+                const chip = document.createElement('span');
+                chip.className = 'shortcut-chip';
+                // Highlight the predicted part if it's a predictive match
+                if (predictiveMatches.length > 0 && lastWord.length > 0) {
+                     const matchName = item.name;
+                     // Simple bolding of the suffix
+                     const suffix = matchName.substring(lastWord.length);
+                     chip.innerHTML = `<i>${item.icon}</i> <b>${matchName.substring(0, lastWord.length)}</b>${suffix}`;
+                } else {
+                     chip.innerHTML = `<i>${item.icon}</i> ${item.name}`;
+                }
+                
+                chip.onclick = () => addSymptom(item.name);
+                container.appendChild(chip);
+            }
+        });
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const bodyParts = document.querySelectorAll('.body-part');
+      const selectedPartsInput = document.getElementById('selected-parts');
+      const textarea = document.getElementById('symptoms');
+
+      // Initial render
+      renderShortcuts();
+
+      // Body Part Click Listener
+      bodyParts.forEach(part => {
+        part.addEventListener('click', function() {
+          const partName = this.getAttribute('data-part');
+          
+          if (this.classList.contains('selected')) {
+            this.classList.remove('selected');
+            selectedParts = selectedParts.filter(p => p !== partName);
+          } else {
+            this.classList.add('selected');
+            if (!selectedParts.includes(partName)) {
+              selectedParts.push(partName);
+            }
+          }
+          
+          selectedPartsInput.value = selectedParts.join(', ');
+          renderShortcuts(); // Refresh shortcuts
+        });
+      });
+
+      // Text Input Listener
+      textarea.addEventListener('input', function() {
+          renderShortcuts();
+      });
+    });
+</script>
+{% endblock %}

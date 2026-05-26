@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="card hero">
+    <div class="hero-content">
+        <h1>Welcome to HSync</h1>
+        <p>Your personalized AI health assistant. Login to track your health and get instant symptom assessments.</p>
+        
+        <div class="actions">
+            {% if current_user.is_authenticated %}
+                <a class="btn" href="/assessment">Start Health Check</a>
+            {% else %}
+                <a class="btn" href="/login">Login</a>
+                <a class="btn" href="/signup" style="background: white; color: var(--primary); border: 1px solid var(--border);">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-image">
+        <img src="{{ url_for('static', filename='assets/health.jpg') }}" alt="Health Assistant">
+    </div>
+</div>
+{% endblock %}

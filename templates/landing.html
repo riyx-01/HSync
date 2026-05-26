@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>HSync • Health</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="header" role="banner" aria-label="Top app bar">
+    <div class="container header-inner">
+      <div class="brand" aria-label="HSync brand">
+        <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
+          <img id="brand-logo" src="/static/logo.svg" alt="HSync Logo" style="height: 32px; width: 32px;">
+          <span class="brand-text">HSync</span>
+        </a>
+      </div>
+      <div style="display:flex; align-items:center;">
+        <span class="signature" aria-label="Signature by Riya Thakur">By Riya Thakur</span>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+      </div>
+    </div>
+  </header>
+  <main class="container app">
+    <div class="card hero">
+      <h1>Welcome to HSync</h1>
+      <p>Check your BMI, select symptoms, and get helpful guidance — all in a simple, button-and-form UI.</p>
+      <div class="actions">
+        <a class="btn" href="/assessment">Start Health Check</a>
+      </div>
+    </div>
+  </main>
+  <button id="chat-fab" class="chat-fab" aria-label="Chat">🗨️</button>
+  <script src="/static/chat.js"></script>
+</body>
+</html>

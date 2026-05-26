@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>HSync • {% block title %}Health{% endblock %}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <div class="brand">
+        <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
+          <img id="brand-logo" src="/static/logo.svg" alt="HSync Logo" style="height: 32px; width: 32px;">
+          <span class="brand-text">HSync</span>
+        </a>
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <div style="display:flex; align-items:center; gap: 15px; margin-left: 30px; flex: 1;">
+           <div class="greeting" style="font-weight: 600; font-size: 1rem; color: var(--text);">Hello, {{ current_user.username }}!</div>
+           
+           {% if health_status %}
+           <div class="status-badge" title="Health badge for you">
+              {% if health_status == 'Good' %}
+                <span class="status-dot good"></span> Good
+              {% elif health_status == 'Attention needed' %}
+                <span class="status-dot attention"></span> Attention
+              {% else %}
+                <span class="status-dot moderate"></span> Moderate
+              {% endif %}
+           </div>
+           {% endif %}
+
+           <div class="history-pill" onclick="openProfile()" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
+              </svg>
+              History
+           </div>
+      </div>
+      {% endif %}
+
+      <div style="display:flex; align-items:center; gap: 15px;">
+        {% if current_user.is_authenticated %}
+        <div class="user-profile-pill" onclick="openProfile()">
+            <span class="avatar">
+                {% if current_user.gender == 'Male' %}👦{% elif current_user.gender == 'Female' %}👧{% else %}🧑{% endif %}
+            </span>
+            <div class="user-info">
+                <span class="username">{{ current_user.username }}</span>
+                <span class="user-age">{{ current_user.age }} years</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="auth-buttons">
+            <a href="/login" class="btn" style="padding: 8px 16px; font-size: 0.9rem;">Login</a>
+        </div>
+        {% endif %}
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container app">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-messages" style="margin-top: 20px;">
+          {% for message in messages %}
+            <div style="padding: 15px; background: rgba(255,255,255,0.8); border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.1);">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+  </main>
+  
+  {% if current_user.is_authenticated %}
+  <!-- Profile Modal -->
+  <div class="modal-overlay" id="profileModal">
+      <div class="profile-modal">
+          <button class="close-modal" onclick="closeProfile()">×</button>
+          
+          <div class="profile-header">
+              <span class="profile-avatar-large">
+                  {% if current_user.gender == 'Male' %}👦{% elif current_user.gender == 'Female' %}👧{% else %}🧑{% endif %}
+              </span>
+              <h2 style="margin-bottom: 5px;">{{ current_user.username }}</h2>
+              <p class="user-age" style="font-size: 1rem;">{{ current_user.age }} years old • {{ current_user.gender }}</p>
+              
+              {% if health_status %}
+              <div style="margin-top: 15px; display: flex; justify-content: center;">
+                   <div class="status-badge" style="background: rgba(255,255,255,0.6); padding: 8px 16px;" title="Health badge for you">
+                      {% if health_status == 'Good' %}
+                        <span class="status-dot good"></span> Good Health
+                      {% elif health_status == 'Attention needed' %}
+                        <span class="status-dot attention"></span> Attention Needed
+                      {% else %}
+                        <span class="status-dot moderate"></span> Moderate Health
+                      {% endif %}
+                   </div>
+              </div>
+              {% endif %}
+
+              <a href="/logout" class="btn" style="margin-top: 15px; background: #ef4444; padding: 8px 20px; font-size: 0.9rem;">Logout</a>
+          </div>
+
+          <div class="history-section">
+              <h3>Assessment History</h3>
+              <div class="history-list" id="historyList">
+                  <div style="text-align: center; color: var(--text-muted); padding: 20px;">Loading history...</div>
+              </div>
+          </div>
+      </div>
+  </div>
+  {% endif %}
+
+  <button id="chat-fab" class="chat-fab" aria-label="Chat">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+  </button>
+  
+  <script src="/static/chat.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

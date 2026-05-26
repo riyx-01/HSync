@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 500px;">
+    <h1 class="auth-title">Create Account</h1>
+    <form method="POST" action="/signup">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Create a password" required>
+        </div>
+        <div style="display: flex; gap: 16px;">
+            <div class="form-group" style="flex: 1;">
+                <label for="birth_year">Birth Year</label>
+                <input type="number" id="birth_year" name="birth_year" class="form-control" placeholder="YYYY" min="1900" max="2025" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label for="age_display">Age (Confirmed)</label>
+                <input type="text" id="age_display" class="form-control" readonly style="background: rgba(0,0,0,0.05); cursor: not-allowed;">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" class="form-control" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male 👦</option>
+                <option value="Female">Female 👧</option>
+                <option value="Other">Other 🧑</option>
+            </select>
+        </div>
+        <div class="auth-actions">
+            <button type="submit" class="btn" style="width: 100%;">Sign Up</button>
+        </div>
+    </form>
+    <div class="auth-footer">
+        Already have an account? <a href="/login">Login</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('birth_year').addEventListener('input', function() {
+        const year = parseInt(this.value);
+        const currentYear = new Date().getFullYear();
+        if (year > 1900 && year <= currentYear) {
+            document.getElementById('age_display').value = (currentYear - year) + " years old";
+        } else {
+            document.getElementById('age_display').value = "";
+        }
+    });
+</script>
+{% endblock %}

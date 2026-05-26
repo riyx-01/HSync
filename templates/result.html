@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Health Report{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .report-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        position: relative;
+    }
+    .report-content h2 {
+        color: var(--primary);
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+    .report-content p, .report-content ul {
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    .exercise-figures {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid var(--border);
+    }
+    .figures-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .figure-card {
+        background: var(--background);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+    .figure-card h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: var(--primary);
+    }
+    .svg-container svg {
+        width: 100%;
+        height: auto;
+        max-height: 150px;
+    }
+    .back-btn {
+        margin-top: 20px;
+        display: inline-block;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .download-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    }
+    .download-btn:hover {
+        background: var(--primary-dark);
+    }
+    .report-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+    .nearby-doctor-section {
+        margin-top: 40px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 12px;
+        border: 1px dashed var(--border);
+        text-align: center;
+    }
+    
+    @media print {
+        .exercise-figures, .back-btn, .header, .chat-fab, .download-btn, .nearby-doctor-section, #theme-toggle {
+            display: none !important;
+        }
+        body {
+            background: white;
+            color: black;
+        }
+        .report-container {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+        }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <button class="download-btn" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download Report
+    </button>
+
+    <h1>Health Summary Report</h1>
+    {% if report_title %}
+    <div class="report-subtitle">{{ report_title }}</div>
+    {% endif %}
+    
+    <div class="report-content">
+    {{ report_content | safe }}
+    </div>
+    
+    {% if exercises %}
+    <div class="exercise-figures">
+    <h2>Exercise Demonstrations</h2>
+    <div class="figures-grid">
+        {% for ex in exercises %}
+        <div class="figure-card">
+            <h3>{{ ex.name }}</h3>
+            <!-- Increased height for better visibility -->
+            <div id="skeleton-container-{{ loop.index }}" class="skeleton-container" style="height: 450px; width: 100%;"></div>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">{{ ex.instructions }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+    {% endif %}
+
+    <div class="nearby-doctor-section">
+        <h2>Need Professional Help?</h2>
+        <p>Based on your symptoms, we recommend seeing a <strong>{{ doctor_type }}</strong>.</p>
+        <button id="find-doctor-btn" class="btn" style="margin-top: 10px;">
+            📍 Find {{ doctor_type }} Nearby
+        </button>
+        <p id="geo-status" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;"></p>
+    </div>
+
+    <a href="/assessment" class="back-btn">← Start New Assessment</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/skeleton.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if exercises %}
+        {% for ex in exercises %}
+            // Use visual_prompt for animation, fallback to name if missing
+            new SkeletonViewer('skeleton-container-{{ loop.index }}', null, 450).setExercise("{{ ex.visual_prompt }}");
+        {% endfor %}
+        {% endif %}
+
+        // Nearby Doctor Logic
+        const findDoctorBtn = document.getElementById('find-doctor-btn');
+        const geoStatus = document.getElementById('geo-status');
+        const doctorType = "{{ doctor_type }}";
+
+        if(findDoctorBtn) {
+            findDoctorBtn.addEventListener('click', function() {
+                if (!navigator.geolocation) {
+                    geoStatus.textContent = "Geolocation is not supported by your browser.";
+                    window.open(`https://www.google.com/maps/search/${doctorType}+near+me`, '_blank');
+                    return;
+                }
+
+                geoStatus.textContent = "Locating...";
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        geoStatus.textContent = "";
+                        // Open Google Maps with query and location bias
+                        const query = encodeURIComponent(`${doctorType} near me`);
+                        const url = `https://www.google.com/maps/search/${query}/@${lat},${lng},14z`;
+                        window.open(url, '_blank');
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                        geoStatus.textContent = "Unable to retrieve location. Searching generally...";
+                        window.open(`https://www.google.com/maps/search/${doctorType}+near+me`, '_blank');
+                    }
+                );
+            });
+        }
+    });
+</script>
+{% endblock %}
